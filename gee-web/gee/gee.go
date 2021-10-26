@@ -2,6 +2,7 @@ package gee
 
 import (
 	"net/http"
+	"strings"
 )
 
 type HandlerFunc func(c *Context)
@@ -39,6 +40,10 @@ func (group *RouterGroup) Group(prefix string) *RouterGroup {
 	return newGroup
 }
 
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
+}
+
 func (group *RouterGroup) addRoute(method, comp string, handler HandlerFunc) {
 	pattern := group.prefix + comp
 	group.engine.router.addRoute(method, pattern, handler)
@@ -58,5 +63,15 @@ func (engine *Engine) Run (addr string)  {
 }
 
 func (engine *Engine) ServeHTTP (w http.ResponseWriter, r *http.Request)  {
-	engine.router.handle(NewContext(w, r))
+	var middlewares []HandlerFunc
+
+	for _, group := range engine.groups {
+		if strings.HasPrefix(r.URL.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
+
+	context := NewContext(w, r)
+	context.handlers = middlewares
+	engine.router.handle(context)
 }

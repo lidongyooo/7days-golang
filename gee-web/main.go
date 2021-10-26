@@ -10,14 +10,19 @@ var r *gee.Engine
 
 func main() {
 	r := gee.New()
-	r.GET("/index", func(c *gee.Context) {
-		c.HTML(http.StatusOK, "index.gohtml", "Hello World")
-	})
+	r.Use(middlewares.Logger, middlewares.Recovery)
 	r.Static("/assets", "./static")
 	r.LoadHTMLGlob("templates/*")
 
+
+	r.GET("/index", func(c *gee.Context) {
+		c.HTML(http.StatusOK, "index.gohtml", "Hello World")
+	})
+	r.GET("/panic", func(c *gee.Context) {
+		names := []string{"geektutu"}
+		c.String(http.StatusOK, names[100])
+	})
 	v1 := r.Group("/v1")
-	v1.Use(middlewares.Logger)
 	{
 		v1.GET("/", func(c *gee.Context) {
 			c.String(http.StatusOK, "<h1>Hello Gee</h1>")

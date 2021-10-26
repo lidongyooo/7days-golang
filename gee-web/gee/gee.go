@@ -20,11 +20,11 @@ func New() *Engine {
 }
 
 func (engine *Engine) GET (pattern string, handler HandlerFunc) {
-	engine.router.addRouter("GET", pattern, handler)
+	engine.router.addRoute("GET", pattern, handler)
 }
 
 func (engine *Engine) POST (pattern string, handler HandlerFunc)  {
-	engine.router.addRouter("POST", pattern, handler)
+	engine.router.addRoute("POST", pattern, handler)
 }
 
 

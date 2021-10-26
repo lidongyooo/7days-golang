@@ -15,7 +15,7 @@ type Context struct {
 	//request info
 	Path string
 	Method string
-
+	Params map[string]string
 	//response info
 	StatusCode int
 }
@@ -51,7 +51,7 @@ func (c *Context) String (code int, format string, values ...interface{}) {
 	c.Writer.Write([]byte(fmt.Sprintf(format, values...)))
 }
 
-func (c *Context) Json (code int, obj interface{})  {
+func (c *Context) JSON (code int, obj interface{})  {
 	c.SetHeader("Content-Type", "application/json")
 	c.Status(code)
 	encoder := json.NewEncoder(c.Writer)
@@ -61,12 +61,16 @@ func (c *Context) Json (code int, obj interface{})  {
 	}
 }
 
+func (c *Context) Param(key string) string {
+	return c.Params[key]
+}
+
 func (c *Context) Data(code int, data []byte) {
 	c.Status(code)
 	c.Writer.Write(data)
 }
 
-func (c *Context) Html(code int, html string) {
+func (c *Context) HTML(code int, html string) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
 	c.Writer.Write([]byte(html))

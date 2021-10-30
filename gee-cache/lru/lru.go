@@ -2,7 +2,6 @@ package lru
 
 import (
 	"container/list"
-	"go/types"
 )
 
 type Cache struct {
@@ -15,7 +14,7 @@ type Cache struct {
 
 type entry struct {
 	key string
-	Value Value
+	value Value
 }
 
 type Value interface {
@@ -35,7 +34,7 @@ func (c *Cache) Get(key string) (value Value, ok bool) {
 	if ele, ok := c.cache[key]; ok {
 		c.list.MoveToBack(ele)
 		kv := ele.Value.(*entry)
-		return kv.Value, true
+		return kv.value, true
 	}
 
 	return
@@ -46,11 +45,34 @@ func (c *Cache) Remove() {
 
 	if ele != nil {
 		c.list.Remove(ele)
-		kv := ele.Value.(entry)
+		kv := ele.Value.(*entry)
 		delete(c.cache, kv.key)
-		c.nBytes -= int64(len(kv.key)) + int64(kv.Value.Len())
+		c.nBytes -= int64(len(kv.key)) + int64(kv.value.Len())
 		if c.OnEvicted != nil {
-			c.OnEvicted(kv.key, kv.Value)
+			c.OnEvicted(kv.key, kv.value)
 		}
+	}
+}
+
+func (c *Cache) Len() int {
+	return c.list.Len()
+}
+
+func (c *Cache) Add(key string, value Value) {
+	if ele, ok := c.cache[key]; ok {
+		c.list.MoveToBack(ele)
+		kv := ele.Value.(*entry)
+		c.nBytes += int64(value.Len()) - int64(kv.value.Len())
+		kv.value = value
+	} else {
+		ele := c.list.PushBack(&entry{
+			key: key,
+			value: value,
+		})
+		c.cache[key] = ele
+		c.nBytes += int64(len(key)) + int64(value.Len())
+	}
+	for c.maxBytes != 0 && c.maxBytes < c.nBytes {
+		c.Remove()
 	}
 }

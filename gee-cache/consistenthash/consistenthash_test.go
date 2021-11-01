@@ -1,13 +1,12 @@
-package main
+package consistenthash
 
 import (
-	"gee-cache/consistenthash"
-	"log"
 	"strconv"
+	"testing"
 )
 
-func main() {
-	hash := consistenthash.New(3, func(key []byte) uint32 {
+func TestHashing(t *testing.T) {
+	hash := New(3, func(key []byte) uint32 {
 		i, _ := strconv.Atoi(string(key))
 		return uint32(i)
 	})
@@ -25,7 +24,7 @@ func main() {
 
 	for k, v := range testCases {
 		if hash.Get(k) != v {
-			log.Printf("Asking for %s, should have yielded %s", k, v)
+			t.Errorf("Asking for %s, should have yielded %s", k, v)
 		}
 	}
 
@@ -37,7 +36,8 @@ func main() {
 
 	for k, v := range testCases {
 		if hash.Get(k) != v {
-			log.Printf("Asking for %s, should have yielded %s", k, v)
+			t.Errorf("Asking for %s, should have yielded %s", k, v)
 		}
 	}
+
 }

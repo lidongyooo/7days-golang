@@ -37,7 +37,6 @@ func (m *Map) Add(keys ...string) {
 			m.hashMap[hash] = key
 		}
 	}
-
 	sort.Ints(m.keys)
 }
 

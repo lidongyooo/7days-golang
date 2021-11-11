@@ -2,19 +2,14 @@ package main
 
 import (
 	"gee-cache/consistenthash"
-	"log"
-	"strconv"
 )
 
 func main() {
-	hash := consistenthash.New(3, func(key []byte) uint32 {
-		i, _ := strconv.Atoi(string(key))
-		return uint32(i)
-	})
+	hash := consistenthash.New(3, nil)
 
 	// Given the above hash function, this will give replicas with "hashes":
 	// 2, 4, 6, 12, 14, 16, 22, 24, 26
-	hash.Add("6", "4", "2")
+	hash.Add("node1", "node2", "node3")
 
 	testCases := map[string]string{
 		"2":  "2",
@@ -25,7 +20,7 @@ func main() {
 
 	for k, v := range testCases {
 		if hash.Get(k) != v {
-			log.Printf("Asking for %s, should have yielded %s", k, v)
+			//log.Printf("Asking for %s, should have yielded %s", k, v)
 		}
 	}
 
@@ -37,7 +32,7 @@ func main() {
 
 	for k, v := range testCases {
 		if hash.Get(k) != v {
-			log.Printf("Asking for %s, should have yielded %s", k, v)
+			//log.Printf("Asking for %s, should have yielded %s", k, v)
 		}
 	}
 }

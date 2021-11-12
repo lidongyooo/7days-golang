@@ -16,7 +16,7 @@ type Group struct {
 	name	string
 	getter  Getter
 	mainCache cache
-	peers	PeerPicker
+	peers	*HTTPPool
 }
 
 var (
@@ -24,7 +24,7 @@ var (
 	groups = make(map[string]*Group)
 )
 
-func (g *Group) RegisterPeers(peers PeerPicker)  {
+func (g *Group) RegisterPeers(peers *HTTPPool)  {
 	if g.peers != nil {
 		panic("RegisterPeerPicker called more than once")
 	}

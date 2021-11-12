@@ -1,38 +1,78 @@
 package main
 
 import (
-	"gee-cache/consistenthash"
+	"flag"
+	"fmt"
+	"gee-cache/gee"
+	"log"
+	"net/http"
 )
 
+var db = map[string]string{
+	"Tom":  "630",
+	"Jack": "589",
+	"Sam":  "567",
+}
+
+func createGroup() *gee.Group {
+	return gee.NewGroup("scores", 2<<10, gee.GetterFunc(
+		func(key string) ([]byte, error) {
+			log.Println("[SlowDB] search key", key)
+			if v, ok := db[key]; ok {
+				return []byte(v), nil
+			}
+			return nil, fmt.Errorf("%s not exist", key)
+		}))
+}
+
+func startCacheServer(addr string, addrs []string, geeGroup *gee.Group) {
+	peers := gee.NewHTTPPool(addr)
+	peers.Set(addrs...)
+	geeGroup.RegisterPeers(peers)
+	log.Println("gee is running at", addr)
+	log.Fatal(http.ListenAndServe(addr[7:], peers))
+}
+
+func startAPIServer(apiAddr string, gee *gee.Group) {
+	http.Handle("/api", http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			key := r.URL.Query().Get("key")
+			view, err := gee.Get(key)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.Write(view.ByteSlice())
+
+		}))
+	log.Println("fontend server is running at", apiAddr)
+	log.Fatal(http.ListenAndServe(apiAddr[7:], nil))
+
+}
+
 func main() {
-	hash := consistenthash.New(3, nil)
+	var port int
+	var api bool
+	flag.IntVar(&port, "port", 8001, "gee server port")
+	flag.BoolVar(&api, "api", false, "Start a api server?")
+	flag.Parse()
 
-	// Given the above hash function, this will give replicas with "hashes":
-	// 2, 4, 6, 12, 14, 16, 22, 24, 26
-	hash.Add("node1", "node2", "node3")
-
-	testCases := map[string]string{
-		"2":  "2",
-		"11": "2",
-		"23": "4",
-		"27": "2",
+	apiAddr := "http://localhost:9999"
+	addrMap := map[int]string{
+		8001: "http://localhost:8001",
+		8002: "http://localhost:8002",
+		8003: "http://localhost:8003",
 	}
 
-	for k, v := range testCases {
-		if hash.Get(k) != v {
-			//log.Printf("Asking for %s, should have yielded %s", k, v)
-		}
+	var addrs []string
+	for _, v := range addrMap {
+		addrs = append(addrs, v)
 	}
 
-	// Adds 8, 18, 28
-	hash.Add("8")
-
-	// 27 should now map to 8.
-	testCases["27"] = "8"
-
-	for k, v := range testCases {
-		if hash.Get(k) != v {
-			//log.Printf("Asking for %s, should have yielded %s", k, v)
-		}
+	gee := createGroup()
+	if api {
+		go startAPIServer(apiAddr, gee)
 	}
+	startCacheServer(addrMap[port], []string(addrs), gee)
 }

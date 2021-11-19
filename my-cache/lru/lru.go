@@ -52,7 +52,7 @@ func (c *Cache) Add(key string, value Value) {
 	}
 
 	for c.maxBytes != 0 && c.currBytes > c.maxBytes {
-		c.remove()
+		c.Remove()
 	}
 }
 
@@ -60,7 +60,7 @@ func (c *Cache) Len() int {
 	return c.list.Len()
 }
 
-func (c *Cache) remove() {
+func (c *Cache) Remove() {
 	ele := c.list.Back()
 	if ele != nil {
 		kv := ele.Value.(*entry)
